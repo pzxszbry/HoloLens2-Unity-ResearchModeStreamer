@@ -74,7 +74,7 @@ PluginImporter:
         DontProcess: false
         PlaceholderPath: 
         SDK: UWP
-        ScriptingBackend: Il2Cpp
+        ScriptingBackend: AnyScriptingBackend
   userData: 
   assetBundleName: 
   assetBundleVariant: 

@@ -51,6 +51,8 @@ private:
 	long long m_minDelta;
 
 	static const int kImageWidth;
+	static const int kImageHeight;
+	static const int kImageFramerate;
 	static const wchar_t kSensorName[3];
 };
 

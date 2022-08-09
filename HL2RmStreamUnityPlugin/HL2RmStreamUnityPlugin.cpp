@@ -87,7 +87,7 @@ winrt::Windows::Foundation::IAsyncAction HL2Stream::InitializeVideoFrameProcesso
 
 	// the frame processor
 	m_pVideoFrameProcessor = std::make_unique<VideoCameraFrameProcessor>();
-	m_pVideoFrameStreamer = std::make_shared<VideoCameraStreamer>(m_worldOrigin, L"23940");
+	m_pVideoFrameStreamer = std::make_shared<VideoCameraStreamer>(m_worldOrigin, L"10080");
 	if (!m_pVideoFrameStreamer.get())
 	{
 		throw winrt::hresult(E_POINTER);
@@ -161,7 +161,7 @@ void HL2Stream::InitializeResearchModeProcessing()
 	GetRigNodeId(guid);
 
 	// initialize the depth streamer
-	auto ahatStreamer = std::make_shared<ResearchModeFrameStreamer>(L"23941", guid, m_worldOrigin);
+	auto ahatStreamer = std::make_shared<ResearchModeFrameStreamer>(L"10081", guid, m_worldOrigin);
 	m_pAHATStreamer = ahatStreamer;
 
 	if (m_pAHATSensor)

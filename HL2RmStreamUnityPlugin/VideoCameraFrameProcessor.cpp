@@ -4,7 +4,22 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Media::Capture;
 using namespace winrt::Windows::Media::Capture::Frames;
 
-const int  VideoCameraFrameProcessor::kImageWidth = 640;
+// ref to https://docs.microsoft.com/en-us/windows/mixed-reality/develop/advanced-concepts/locatable-camera-overview#hololens-2
+/*
+* 1920x1080@15,30
+* 1280x720@15,30
+* 1128x636@15,30
+* 960x540@15,30
+* 760x428@15,30
+* 640x360@15,30
+* 500x282@15,30
+* 424x240@15,30
+*/
+const int  VideoCameraFrameProcessor::kImageWidth = 760;
+const int  VideoCameraFrameProcessor::kImageHeight = 428;
+const int VideoCameraFrameProcessor::kImageFramerate = 30;
+
+
 const wchar_t  VideoCameraFrameProcessor::kSensorName[3] = L"PV";
 
 IAsyncAction VideoCameraFrameProcessor::InitializeAsync(
@@ -43,7 +58,9 @@ IAsyncAction VideoCameraFrameProcessor::InitializeAsync(
                     knownDesc.Width(), knownDesc.Height(), knownDesc.FrameRate());
                 OutputDebugStringW(msgBuffer);
 #endif
-                if ((knownDesc.Width() == kImageWidth)) // && (std::round(knownDesc.FrameRate()) == 15))
+                if ((knownDesc.Width() == kImageWidth) 
+                    && (knownDesc.Height() == kImageHeight) 
+                    && (std::round(knownDesc.FrameRate())==30))
                 {
                     profile = knownProfile;
                     desc = knownDesc;

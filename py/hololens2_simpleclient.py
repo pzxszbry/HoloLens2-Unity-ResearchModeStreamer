@@ -8,7 +8,13 @@ from enum import Enum
 import numpy as np
 import cv2
 
-np.warnings.filterwarnings('ignore')
+np.warnings.filterwarnings("ignore")
+
+# Each port corresponds to a single stream type
+VIDEO_STREAM_PORT = 10080
+AHAT_STREAM_PORT = 10081
+
+HOST = "192.168.50.210"
 
 # Definitions
 # Protocol Header Format
@@ -16,30 +22,25 @@ np.warnings.filterwarnings('ignore')
 VIDEO_STREAM_HEADER_FORMAT = "@qIIII18f"
 
 VIDEO_FRAME_STREAM_HEADER = namedtuple(
-    'SensorFrameStreamHeader',
-    'Timestamp ImageWidth ImageHeight PixelStride RowStride fx fy '
-    'PVtoWorldtransformM11 PVtoWorldtransformM12 PVtoWorldtransformM13 PVtoWorldtransformM14 '
-    'PVtoWorldtransformM21 PVtoWorldtransformM22 PVtoWorldtransformM23 PVtoWorldtransformM24 '
-    'PVtoWorldtransformM31 PVtoWorldtransformM32 PVtoWorldtransformM33 PVtoWorldtransformM34 '
-    'PVtoWorldtransformM41 PVtoWorldtransformM42 PVtoWorldtransformM43 PVtoWorldtransformM44 '
+    "SensorFrameStreamHeader",
+    "Timestamp ImageWidth ImageHeight PixelStride RowStride fx fy "
+    "PVtoWorldtransformM11 PVtoWorldtransformM12 PVtoWorldtransformM13 PVtoWorldtransformM14 "
+    "PVtoWorldtransformM21 PVtoWorldtransformM22 PVtoWorldtransformM23 PVtoWorldtransformM24 "
+    "PVtoWorldtransformM31 PVtoWorldtransformM32 PVtoWorldtransformM33 PVtoWorldtransformM34 "
+    "PVtoWorldtransformM41 PVtoWorldtransformM42 PVtoWorldtransformM43 PVtoWorldtransformM44 ",
 )
 
 RM_STREAM_HEADER_FORMAT = "@qIIII16f"
 
 RM_FRAME_STREAM_HEADER = namedtuple(
-    'SensorFrameStreamHeader',
-    'Timestamp ImageWidth ImageHeight PixelStride RowStride '
-    'rig2worldTransformM11 rig2worldTransformM12 rig2worldTransformM13 rig2worldTransformM14 '
-    'rig2worldTransformM21 rig2worldTransformM22 rig2worldTransformM23 rig2worldTransformM24 '
-    'rig2worldTransformM31 rig2worldTransformM32 rig2worldTransformM33 rig2worldTransformM34 '
-    'rig2worldTransformM41 rig2worldTransformM42 rig2worldTransformM43 rig2worldTransformM44 '
+    "SensorFrameStreamHeader",
+    "Timestamp ImageWidth ImageHeight PixelStride RowStride "
+    "rig2worldTransformM11 rig2worldTransformM12 rig2worldTransformM13 rig2worldTransformM14 "
+    "rig2worldTransformM21 rig2worldTransformM22 rig2worldTransformM23 rig2worldTransformM24 "
+    "rig2worldTransformM31 rig2worldTransformM32 rig2worldTransformM33 rig2worldTransformM34 "
+    "rig2worldTransformM41 rig2worldTransformM42 rig2worldTransformM43 rig2worldTransformM44 ",
 )
 
-# Each port corresponds to a single stream type
-VIDEO_STREAM_PORT = 23940
-AHAT_STREAM_PORT = 23941
-
-HOST = '192.168.47.2'
 
 HundredsOfNsToMilliseconds = 1e-4
 MillisecondsToSeconds = 1e-3
@@ -70,7 +71,7 @@ class FrameReceiverThread(threading.Thread):
         reply = self.recvall(self.header_size)
 
         if not reply:
-            print('ERROR: Failed to receive data from stream.')
+            print("ERROR: Failed to receive data from stream.")
             return
 
         data = struct.unpack(self.header_format, reply)
@@ -86,7 +87,7 @@ class FrameReceiverThread(threading.Thread):
         msg = bytes()
         while len(msg) < size:
             part = self.socket.recv(size - len(msg))
-            if part == '':
+            if part == "":
                 break  # the connection is closed
             msg += part
         return msg
@@ -95,7 +96,7 @@ class FrameReceiverThread(threading.Thread):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
         # send_message(self.socket, b'socket connected at ')
-        print('INFO: Socket connected to ' + self.host + ' on port ' + str(self.port))
+        print("INFO: Socket connected to " + self.host + " on port " + str(self.port))
 
     def start_listen(self):
         t = threading.Thread(target=self.listen)
@@ -112,15 +113,23 @@ class FrameReceiverThread(threading.Thread):
 
 class VideoReceiverThread(FrameReceiverThread):
     def __init__(self, host):
-        super().__init__(host, VIDEO_STREAM_PORT, VIDEO_STREAM_HEADER_FORMAT,
-                         VIDEO_FRAME_STREAM_HEADER)
+        super().__init__(
+            host,
+            VIDEO_STREAM_PORT,
+            VIDEO_STREAM_HEADER_FORMAT,
+            VIDEO_FRAME_STREAM_HEADER,
+        )
 
     def listen(self):
         while True:
             self.latest_header, image_data = self.get_data_from_socket()
-            self.latest_frame = np.frombuffer(image_data, dtype=np.uint8).reshape((self.latest_header.ImageHeight,
-                                                                                   self.latest_header.ImageWidth,
-                                                                                   self.latest_header.PixelStride))
+            self.latest_frame = np.frombuffer(image_data, dtype=np.uint8).reshape(
+                (
+                    self.latest_header.ImageHeight,
+                    self.latest_header.ImageWidth,
+                    self.latest_header.PixelStride,
+                )
+            )
 
     def get_mat_from_header(self, header):
         pv_to_world_transform = np.array(header[7:24]).reshape((4, 4)).T
@@ -129,21 +138,23 @@ class VideoReceiverThread(FrameReceiverThread):
 
 class AhatReceiverThread(FrameReceiverThread):
     def __init__(self, host):
-        super().__init__(host,
-                         AHAT_STREAM_PORT, RM_STREAM_HEADER_FORMAT, RM_FRAME_STREAM_HEADER)
+        super().__init__(
+            host, AHAT_STREAM_PORT, RM_STREAM_HEADER_FORMAT, RM_FRAME_STREAM_HEADER
+        )
 
     def listen(self):
         while True:
             self.latest_header, image_data = self.get_data_from_socket()
-            self.latest_frame = np.frombuffer(image_data, dtype=np.uint16).reshape((self.latest_header.ImageHeight,
-                                                                                    self.latest_header.ImageWidth))
+            self.latest_frame = np.frombuffer(image_data, dtype=np.uint16).reshape(
+                (self.latest_header.ImageHeight, self.latest_header.ImageWidth)
+            )
 
     def get_mat_from_header(self, header):
         rig_to_world_transform = np.array(header[5:22]).reshape((4, 4)).T
         return rig_to_world_transform
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     video_receiver = VideoReceiverThread(HOST)
     video_receiver.start_socket()
 
@@ -156,14 +167,10 @@ if __name__ == '__main__':
     while True:
         if np.any(video_receiver.latest_frame) and np.any(ahat_receiver.latest_frame):
 
-            cv2.imshow('Photo Video Camera Stream', video_receiver.latest_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            cv2.imshow("Photo Video Camera Stream", video_receiver.latest_frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
-            cv2.imshow('Depth Camera Stream', ahat_receiver.latest_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            cv2.imshow("Depth Camera Stream", ahat_receiver.latest_frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
-
-
-
-
